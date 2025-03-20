@@ -67,21 +67,36 @@ def main():
 
     # Rolling methodology section
     st.subheader("Rolling Methodology")
-    st.session_state.roll_method = st.radio(
-        "Select rolling method:",
-        ["Generated Roll", "Input Roll"],
-        key="roll_method"
-    )
-
-    # If "Input Roll" is selected, show a field box for entering the rolled number
-    if st.session_state.roll_method == "Input Roll":
-        st.session_state.manual_roll = st.number_input(
-            "Enter rolled number:",
-            min_value=1,
-            max_value=100,
-            value=st.session_state.manual_roll,
-            key="manual_roll"
+    col1, col2 = st.columns([0.2, 0.8])  # 20% width for bullet, 80% for input/button
+    with col1:
+        # Bullet selection for Generated Roll or Input Roll
+        st.session_state.roll_method = st.radio(
+            "Select rolling method:",
+            ["Generated Roll", "Input Roll"],
+            key="roll_method"
         )
+    with col2:
+        # If "Input Roll" is selected, show a field box for entering the rolled number
+        if st.session_state.roll_method == "Input Roll":
+            st.session_state.manual_roll = st.number_input(
+                "Enter rolled number:",
+                min_value=1,
+                max_value=100,
+                value=st.session_state.manual_roll,
+                key="manual_roll"
+            )
+
+    # Confirmation button
+    if st.button("Confirm Roll"):
+        if st.session_state.roll_method == "Generated Roll":
+            die_result = roll_d100()
+        else:
+            die_result = st.session_state.manual_roll
+        # Store the rolled value for display
+        st.session_state.last_result = {
+            "die_result": die_result,
+            "roll_method": st.session_state.roll_method
+        }
 
     # Display stat inputs with SR values and roll buttons
     for category, stat_list in stats.items():
@@ -106,24 +121,22 @@ def main():
             with col3:
                 # Roll button for the stat
                 if st.button(f"Roll for {stat}", key=f"{stat}_button"):
-                    if st.session_state.roll_method == "Generated Roll":
-                        die_result = roll_d100()
-                    else:
-                        die_result = st.session_state.manual_roll
-                    # Calculate adjustment
-                    adjustment = calculate_final_result(die_result, st.session_state.stats[stat]["value"])
-                    # Update adjustment and total SR
-                    st.session_state.stats[stat]["adjustment"] = adjustment
-                    st.session_state.stats[stat]["total_SR"] = st.session_state.stats[stat]["SR"] + adjustment
-                    # Store the result for display
-                    st.session_state.last_result = {
-                        "stat": stat,
-                        "entered_stat": st.session_state.stats[stat]["value"],
-                        "SR": st.session_state.stats[stat]["SR"],
-                        "die_result": die_result,
-                        "adjustment": adjustment,
-                        "total_SR": st.session_state.stats[stat]["total_SR"]
-                    }
+                    if st.session_state.last_result:
+                        die_result = st.session_state.last_result["die_result"]
+                        # Calculate adjustment
+                        adjustment = calculate_final_result(die_result, st.session_state.stats[stat]["value"])
+                        # Update adjustment and total SR
+                        st.session_state.stats[stat]["adjustment"] = adjustment
+                        st.session_state.stats[stat]["total_SR"] = st.session_state.stats[stat]["SR"] + adjustment
+                        # Store the result for display
+                        st.session_state.last_result = {
+                            "stat": stat,
+                            "entered_stat": st.session_state.stats[stat]["value"],
+                            "SR": st.session_state.stats[stat]["SR"],
+                            "die_result": die_result,
+                            "adjustment": adjustment,
+                            "total_SR": st.session_state.stats[stat]["total_SR"]
+                        }
 
 if __name__ == "__main__":
     main()
