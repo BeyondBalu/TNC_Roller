@@ -70,19 +70,14 @@ def main():
     # Single roll button
     if st.button("Roll"):
         st.session_state.roll_confirmation["stat"] = selected_stat
-        st.session_state.roll_confirmation["roll_option"] = None  # Reset roll option
+        st.session_state.roll_confirmation["roll_option"] = st.radio(
+            f"Roll option for {selected_stat}",
+            ["Generate Roll", "Input Roll"],
+            key=f"{selected_stat}_roll_option"
+        )
 
-    # If a stat is selected for rolling, show roll options
+    # If "Input Roll" is selected, show a field box for entering the rolled number
     if st.session_state.roll_confirmation["stat"] == selected_stat:
-        # Show roll options (Generate Roll or Input Roll)
-        if st.session_state.roll_confirmation["roll_option"] is None:
-            st.session_state.roll_confirmation["roll_option"] = st.radio(
-                f"Roll option for {selected_stat}",
-                ["Generate Roll", "Input Roll"],
-                key=f"{selected_stat}_roll_option"
-            )
-
-        # If "Input Roll" is selected, show a field box for entering the rolled number
         if st.session_state.roll_confirmation["roll_option"] == "Input Roll":
             st.session_state.roll_confirmation["manual_roll"] = st.number_input(
                 f"Enter rolled number for {selected_stat}:",
@@ -109,8 +104,6 @@ def main():
                 }
                 # Reset roll confirmation
                 st.session_state.roll_confirmation = {"stat": None, "roll_option": None, "manual_roll": None}
-
-        # If "Generate Roll" is selected, confirm the roll
         elif st.session_state.roll_confirmation["roll_option"] == "Generate Roll":
             if st.button("Confirm Roll"):
                 die_result = roll_d100()
