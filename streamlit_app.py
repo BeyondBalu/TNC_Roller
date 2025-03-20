@@ -30,9 +30,13 @@ def main():
     if "last_result" not in st.session_state:
         st.session_state.last_result = None
 
-    # Initialize session state for roll confirmation
-    if "roll_confirmation" not in st.session_state:
-        st.session_state.roll_confirmation = {"stat": None, "roll_option": None, "manual_roll": None}
+    # Initialize session state for rolling methodology
+    if "roll_method" not in st.session_state:
+        st.session_state.roll_method = "Generated Roll"  # Default to Generated Roll
+
+    # Initialize session state for manual roll input
+    if "manual_roll" not in st.session_state:
+        st.session_state.manual_roll = 50  # Default value for manual roll
 
     # Stat categories
     stats = {
@@ -61,81 +65,29 @@ def main():
     # Main content area for stat inputs
     st.header("Enter Stat Values")
 
-    # Dropdown to select stat for rolling
-    selected_stat = st.selectbox(
-        "Select a stat to roll against:",
-        [stat for category in stats.values() for stat in category]
+    # Rolling methodology section
+    st.subheader("Rolling Methodology")
+    st.session_state.roll_method = st.radio(
+        "Select rolling method:",
+        ["Generated Roll", "Input Roll"],
+        key="roll_method"
     )
 
-    # Single roll button
-    if st.button("Roll"):
-        st.session_state.roll_confirmation["stat"] = selected_stat
-        st.session_state.roll_confirmation["roll_option"] = None  # Reset roll option
+    # If "Input Roll" is selected, show a field box for entering the rolled number
+    if st.session_state.roll_method == "Input Roll":
+        st.session_state.manual_roll = st.number_input(
+            "Enter rolled number:",
+            min_value=1,
+            max_value=100,
+            value=st.session_state.manual_roll,
+            key="manual_roll"
+        )
 
-    # If a stat is selected for rolling, show roll options
-    if st.session_state.roll_confirmation["stat"] == selected_stat:
-        # Show roll options (Generate Roll or Input Roll)
-        if st.session_state.roll_confirmation["roll_option"] is None:
-            st.session_state.roll_confirmation["roll_option"] = st.radio(
-                f"Roll option for {selected_stat}",
-                ["Generate Roll", "Input Roll"],
-                key=f"{selected_stat}_roll_option"
-            )
-
-        # If "Input Roll" is selected, show a field box for entering the rolled number
-        if st.session_state.roll_confirmation["roll_option"] == "Input Roll":
-            st.session_state.roll_confirmation["manual_roll"] = st.number_input(
-                f"Enter rolled number for {selected_stat}:",
-                min_value=1,
-                max_value=100,
-                value=50,
-                key=f"{selected_stat}_manual_roll"
-            )
-            if st.button("Confirm Roll"):
-                die_result = st.session_state.roll_confirmation["manual_roll"]
-                # Calculate adjustment
-                adjustment = calculate_final_result(die_result, st.session_state.stats[selected_stat]["value"])
-                # Update adjustment and total SR
-                st.session_state.stats[selected_stat]["adjustment"] = adjustment
-                st.session_state.stats[selected_stat]["total_SR"] = st.session_state.stats[selected_stat]["SR"] + adjustment
-                # Store the result for display
-                st.session_state.last_result = {
-                    "stat": selected_stat,
-                    "entered_stat": st.session_state.stats[selected_stat]["value"],
-                    "SR": st.session_state.stats[selected_stat]["SR"],
-                    "die_result": die_result,
-                    "adjustment": adjustment,
-                    "total_SR": st.session_state.stats[selected_stat]["total_SR"]
-                }
-                # Reset roll confirmation
-                st.session_state.roll_confirmation = {"stat": None, "roll_option": None, "manual_roll": None}
-
-        # If "Generate Roll" is selected, confirm the roll
-        elif st.session_state.roll_confirmation["roll_option"] == "Generate Roll":
-            if st.button("Confirm Roll"):
-                die_result = roll_d100()
-                # Calculate adjustment
-                adjustment = calculate_final_result(die_result, st.session_state.stats[selected_stat]["value"])
-                # Update adjustment and total SR
-                st.session_state.stats[selected_stat]["adjustment"] = adjustment
-                st.session_state.stats[selected_stat]["total_SR"] = st.session_state.stats[selected_stat]["SR"] + adjustment
-                # Store the result for display
-                st.session_state.last_result = {
-                    "stat": selected_stat,
-                    "entered_stat": st.session_state.stats[selected_stat]["value"],
-                    "SR": st.session_state.stats[selected_stat]["SR"],
-                    "die_result": die_result,
-                    "adjustment": adjustment,
-                    "total_SR": st.session_state.stats[selected_stat]["total_SR"]
-                }
-                # Reset roll confirmation
-                st.session_state.roll_confirmation = {"stat": None, "roll_option": None, "manual_roll": None}
-
-    # Display stat inputs with SR values
+    # Display stat inputs with SR values and roll buttons
     for category, stat_list in stats.items():
         st.subheader(category)
         for stat in stat_list:
-            col1, col2 = st.columns([0.2, 0.8])  # 20% width for SR, 80% for input
+            col1, col2, col3 = st.columns([0.2, 0.6, 0.2])  # 20% width for SR, 60% for input, 20% for button
             with col1:
                 # Display SR to the left of the input box
                 st.session_state.stats[stat]["SR"] = get_SR(st.session_state.stats[stat]["value"])
@@ -151,6 +103,27 @@ def main():
                     step=1,
                     label_visibility="visible"  # Show the label
                 )
+            with col3:
+                # Roll button for the stat
+                if st.button(f"Roll for {stat}", key=f"{stat}_button"):
+                    if st.session_state.roll_method == "Generated Roll":
+                        die_result = roll_d100()
+                    else:
+                        die_result = st.session_state.manual_roll
+                    # Calculate adjustment
+                    adjustment = calculate_final_result(die_result, st.session_state.stats[stat]["value"])
+                    # Update adjustment and total SR
+                    st.session_state.stats[stat]["adjustment"] = adjustment
+                    st.session_state.stats[stat]["total_SR"] = st.session_state.stats[stat]["SR"] + adjustment
+                    # Store the result for display
+                    st.session_state.last_result = {
+                        "stat": stat,
+                        "entered_stat": st.session_state.stats[stat]["value"],
+                        "SR": st.session_state.stats[stat]["SR"],
+                        "die_result": die_result,
+                        "adjustment": adjustment,
+                        "total_SR": st.session_state.stats[stat]["total_SR"]
+                    }
 
 if __name__ == "__main__":
     main()
