@@ -35,10 +35,6 @@ def main():
     if "stats" not in st.session_state:
         st.session_state.stats = {stat: {"value": 50, "SR": 5, "adjustment": 0, "total_SR": 5} for stat in physical_stats + mental_stats + combat_stats}
 
-    # Initialize session state for roll confirmation
-    if "roll_confirmation" not in st.session_state:
-        st.session_state.roll_confirmation = {stat: False for stat in physical_stats + mental_stats + combat_stats}
-
     # Input fields for stats
     st.header("Enter Stat Values")
     col1, col2, col3 = st.columns(3)
@@ -66,58 +62,10 @@ def main():
             with row[2]:
                 # Roll button next to the stat
                 if st.button(f"Roll for {stat}", key=f"{stat}_button"):
-                    st.session_state.roll_confirmation[stat] = True
-
-            # Confirmation box after selecting roll method
-            if st.session_state.roll_confirmation[stat]:
-                st.write(f"Rolling for {stat}...")
-                roll_option = st.radio(
-                    f"Roll option for {stat}",
-                    ["Generate Roll", "Input Roll"],
-                    key=f"{stat}_roll_option"
-                )
-                if roll_option == "Generate Roll":
-                    if st.button(f"Confirm Roll for {stat}", key=f"{stat}_confirm_generate"):
-                        die_result = roll_d100()
-                        # Calculate adjustment
-                        adjustment = calculate_final_result(die_result, st.session_state.stats[stat]["value"])
-                        # Update adjustment and total SR
-                        st.session_state.stats[stat]["adjustment"] = adjustment
-                        st.session_state.stats[stat]["total_SR"] = st.session_state.stats[stat]["SR"] + adjustment
-                        # Store the result for display
-                        st.session_state.last_result = {
-                            "stat": stat,
-                            "entered_stat": st.session_state.stats[stat]["value"],
-                            "SR": st.session_state.stats[stat]["SR"],
-                            "die_result": die_result,
-                            "adjustment": adjustment,
-                            "total_SR": st.session_state.stats[stat]["total_SR"]
-                        }
-                        st.session_state.roll_confirmation[stat] = False
-                else:
-                    die_result = st.number_input(
-                        f"Enter rolled number for {stat}:",
-                        min_value=1,
-                        max_value=100,
-                        value=50,
-                        key=f"{stat}_manual_roll"
-                    )
-                    if st.button(f"Confirm Roll for {stat}", key=f"{stat}_confirm_input"):
-                        # Calculate adjustment
-                        adjustment = calculate_final_result(die_result, st.session_state.stats[stat]["value"])
-                        # Update adjustment and total SR
-                        st.session_state.stats[stat]["adjustment"] = adjustment
-                        st.session_state.stats[stat]["total_SR"] = st.session_state.stats[stat]["SR"] + adjustment
-                        # Store the result for display
-                        st.session_state.last_result = {
-                            "stat": stat,
-                            "entered_stat": st.session_state.stats[stat]["value"],
-                            "SR": st.session_state.stats[stat]["SR"],
-                            "die_result": die_result,
-                            "adjustment": adjustment,
-                            "total_SR": st.session_state.stats[stat]["total_SR"]
-                        }
-                        st.session_state.roll_confirmation[stat] = False
+                    # Store the selected stat in session state
+                    st.session_state.selected_stat = stat
+                    # Reset the roll confirmation flag
+                    st.session_state.roll_confirmed = False
 
     with col2:
         st.subheader("Mental Stats")
@@ -142,58 +90,10 @@ def main():
             with row[2]:
                 # Roll button next to the stat
                 if st.button(f"Roll for {stat}", key=f"{stat}_button"):
-                    st.session_state.roll_confirmation[stat] = True
-
-            # Confirmation box after selecting roll method
-            if st.session_state.roll_confirmation[stat]:
-                st.write(f"Rolling for {stat}...")
-                roll_option = st.radio(
-                    f"Roll option for {stat}",
-                    ["Generate Roll", "Input Roll"],
-                    key=f"{stat}_roll_option"
-                )
-                if roll_option == "Generate Roll":
-                    if st.button(f"Confirm Roll for {stat}", key=f"{stat}_confirm_generate"):
-                        die_result = roll_d100()
-                        # Calculate adjustment
-                        adjustment = calculate_final_result(die_result, st.session_state.stats[stat]["value"])
-                        # Update adjustment and total SR
-                        st.session_state.stats[stat]["adjustment"] = adjustment
-                        st.session_state.stats[stat]["total_SR"] = st.session_state.stats[stat]["SR"] + adjustment
-                        # Store the result for display
-                        st.session_state.last_result = {
-                            "stat": stat,
-                            "entered_stat": st.session_state.stats[stat]["value"],
-                            "SR": st.session_state.stats[stat]["SR"],
-                            "die_result": die_result,
-                            "adjustment": adjustment,
-                            "total_SR": st.session_state.stats[stat]["total_SR"]
-                        }
-                        st.session_state.roll_confirmation[stat] = False
-                else:
-                    die_result = st.number_input(
-                        f"Enter rolled number for {stat}:",
-                        min_value=1,
-                        max_value=100,
-                        value=50,
-                        key=f"{stat}_manual_roll"
-                    )
-                    if st.button(f"Confirm Roll for {stat}", key=f"{stat}_confirm_input"):
-                        # Calculate adjustment
-                        adjustment = calculate_final_result(die_result, st.session_state.stats[stat]["value"])
-                        # Update adjustment and total SR
-                        st.session_state.stats[stat]["adjustment"] = adjustment
-                        st.session_state.stats[stat]["total_SR"] = st.session_state.stats[stat]["SR"] + adjustment
-                        # Store the result for display
-                        st.session_state.last_result = {
-                            "stat": stat,
-                            "entered_stat": st.session_state.stats[stat]["value"],
-                            "SR": st.session_state.stats[stat]["SR"],
-                            "die_result": die_result,
-                            "adjustment": adjustment,
-                            "total_SR": st.session_state.stats[stat]["total_SR"]
-                        }
-                        st.session_state.roll_confirmation[stat] = False
+                    # Store the selected stat in session state
+                    st.session_state.selected_stat = stat
+                    # Reset the roll confirmation flag
+                    st.session_state.roll_confirmed = False
 
     with col3:
         st.subheader("Combat Stats")
@@ -218,58 +118,68 @@ def main():
             with row[2]:
                 # Roll button next to the stat
                 if st.button(f"Roll for {stat}", key=f"{stat}_button"):
-                    st.session_state.roll_confirmation[stat] = True
+                    # Store the selected stat in session state
+                    st.session_state.selected_stat = stat
+                    # Reset the roll confirmation flag
+                    st.session_state.roll_confirmed = False
 
-            # Confirmation box after selecting roll method
-            if st.session_state.roll_confirmation[stat]:
-                st.write(f"Rolling for {stat}...")
-                roll_option = st.radio(
-                    f"Roll option for {stat}",
-                    ["Generate Roll", "Input Roll"],
-                    key=f"{stat}_roll_option"
-                )
-                if roll_option == "Generate Roll":
-                    if st.button(f"Confirm Roll for {stat}", key=f"{stat}_confirm_generate"):
-                        die_result = roll_d100()
-                        # Calculate adjustment
-                        adjustment = calculate_final_result(die_result, st.session_state.stats[stat]["value"])
-                        # Update adjustment and total SR
-                        st.session_state.stats[stat]["adjustment"] = adjustment
-                        st.session_state.stats[stat]["total_SR"] = st.session_state.stats[stat]["SR"] + adjustment
-                        # Store the result for display
-                        st.session_state.last_result = {
-                            "stat": stat,
-                            "entered_stat": st.session_state.stats[stat]["value"],
-                            "SR": st.session_state.stats[stat]["SR"],
-                            "die_result": die_result,
-                            "adjustment": adjustment,
-                            "total_SR": st.session_state.stats[stat]["total_SR"]
-                        }
-                        st.session_state.roll_confirmation[stat] = False
-                else:
-                    die_result = st.number_input(
-                        f"Enter rolled number for {stat}:",
-                        min_value=1,
-                        max_value=100,
-                        value=50,
-                        key=f"{stat}_manual_roll"
-                    )
-                    if st.button(f"Confirm Roll for {stat}", key=f"{stat}_confirm_input"):
-                        # Calculate adjustment
-                        adjustment = calculate_final_result(die_result, st.session_state.stats[stat]["value"])
-                        # Update adjustment and total SR
-                        st.session_state.stats[stat]["adjustment"] = adjustment
-                        st.session_state.stats[stat]["total_SR"] = st.session_state.stats[stat]["SR"] + adjustment
-                        # Store the result for display
-                        st.session_state.last_result = {
-                            "stat": stat,
-                            "entered_stat": st.session_state.stats[stat]["value"],
-                            "SR": st.session_state.stats[stat]["SR"],
-                            "die_result": die_result,
-                            "adjustment": adjustment,
-                            "total_SR": st.session_state.stats[stat]["total_SR"]
-                        }
-                        st.session_state.roll_confirmation[stat] = False
+    # Confirmation box for rolling
+    if "selected_stat" in st.session_state and not st.session_state.get("roll_confirmed", False):
+        st.header("Roll Confirmation")
+        stat = st.session_state.selected_stat
+        st.write(f"You are rolling for **{stat}**.")
+        
+        # Option to input or generate rolled number
+        roll_option = st.radio(
+            f"Roll option for {stat}",
+            ["Generate Roll", "Input Roll"],
+            key=f"{stat}_roll_option"
+        )
+        
+        if roll_option == "Generate Roll":
+            if st.button("Confirm Roll", key=f"{stat}_confirm_generate"):
+                die_result = roll_d100()
+                # Calculate adjustment
+                adjustment = calculate_final_result(die_result, st.session_state.stats[stat]["value"])
+                # Update adjustment and total SR
+                st.session_state.stats[stat]["adjustment"] = adjustment
+                st.session_state.stats[stat]["total_SR"] = st.session_state.stats[stat]["SR"] + adjustment
+                # Store the result for display
+                st.session_state.last_result = {
+                    "stat": stat,
+                    "entered_stat": st.session_state.stats[stat]["value"],
+                    "SR": st.session_state.stats[stat]["SR"],
+                    "die_result": die_result,
+                    "adjustment": adjustment,
+                    "total_SR": st.session_state.stats[stat]["total_SR"]
+                }
+                # Set roll confirmation flag
+                st.session_state.roll_confirmed = True
+        else:
+            die_result = st.number_input(
+                f"Enter rolled number for {stat}:",
+                min_value=1,
+                max_value=100,
+                value=50,
+                key=f"{stat}_manual_roll"
+            )
+            if st.button("Confirm Roll", key=f"{stat}_confirm_input"):
+                # Calculate adjustment
+                adjustment = calculate_final_result(die_result, st.session_state.stats[stat]["value"])
+                # Update adjustment and total SR
+                st.session_state.stats[stat]["adjustment"] = adjustment
+                st.session_state.stats[stat]["total_SR"] = st.session_state.stats[stat]["SR"] + adjustment
+                # Store the result for display
+                st.session_state.last_result = {
+                    "stat": stat,
+                    "entered_stat": st.session_state.stats[stat]["value"],
+                    "SR": st.session_state.stats[stat]["SR"],
+                    "die_result": die_result,
+                    "adjustment": adjustment,
+                    "total_SR": st.session_state.stats[stat]["total_SR"]
+                }
+                # Set roll confirmation flag
+                st.session_state.roll_confirmed = True
 
     # Display the last result
     if "last_result" in st.session_state:
