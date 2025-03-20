@@ -84,6 +84,7 @@ def main():
                 min_value=1,
                 max_value=100,
                 value=50,
+                step=1,
                 key=f"{selected_stat}_manual_roll"
             )
             if st.button("Confirm Roll"):
