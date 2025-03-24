@@ -35,8 +35,12 @@ def main():
     if "stats" not in st.session_state:
         st.session_state.stats = {stat: {"value": 50, "SR": 5, "adjustment": 0, "total_SR": 5} for stat in physical_stats + mental_stats + combat_stats}
 
-    # Create a two-column layout
-    col1, col2 = st.columns([0.4, 0.6])  # Left column for Roll Confirmation/Results, right column for stats
+    # Initialize session state to store skills
+    if "skills" not in st.session_state:
+        st.session_state.skills = []
+
+    # Create a three-column layout
+    col1, col2, col3 = st.columns([0.3, 0.4, 0.3])  # Left: Roll Confirmation/Results, Middle: Stats, Right: Skills
 
     with col2:
         # Input fields for stats
@@ -206,6 +210,63 @@ def main():
                 st.write(f"**You rolled:** {st.session_state.last_result['die_result']}")
                 st.write(f"**Adjustment:** {st.session_state.last_result['adjustment']}")
                 st.write(f"**Total SR:** {st.session_state.last_result['total_SR']}")
+
+    with col3:
+        # Skills Section
+        st.header("Skills")
+
+        # Input for Skill Name
+        skill_name = st.text_input("Skill Name", key="skill_name")
+
+        # Dropdown to select a stat
+        selected_stat = st.selectbox(
+            "Select Stat",
+            physical_stats + mental_stats + combat_stats,
+            key="selected_stat_skill"
+        )
+
+        # Skill Level Selection
+        skill_level = st.radio(
+            "Skill Level",
+            ["Novice (+2)", "Expert (+4)", "Master (+6)"],
+            key="skill_level"
+        )
+
+        # Misc Value Input
+        misc_value = st.number_input(
+            "Misc Value",
+            min_value=0,
+            value=0,
+            key="misc_value"
+        )
+
+        # Calculate Skill SR
+        if selected_stat and skill_level and misc_value is not None:
+            # Get the selected stat's SR
+            stat_SR = st.session_state.stats[selected_stat]["SR"]
+            # Get the skill level bonus
+            skill_level_bonus = int(skill_level.split("+")[1].replace(")", ""))
+            # Calculate Skill SR
+            skill_SR = stat_SR + skill_level_bonus + misc_value
+
+            # Display Skill SR
+            st.write(f"**Skill SR:** {skill_SR}")
+
+            # Save the skill to session state
+            if st.button("Save Skill", key="save_skill"):
+                st.session_state.skills.append({
+                    "name": skill_name,
+                    "stat": selected_stat,
+                    "level": skill_level,
+                    "misc": misc_value,
+                    "SR": skill_SR
+                })
+
+        # Display Saved Skills
+        if st.session_state.skills:
+            st.subheader("Saved Skills")
+            for skill in st.session_state.skills:
+                st.write(f"**{skill['name']}** (Stat: {skill['stat']}, Level: {skill['level']}, Misc: {skill['misc']}, SR: {skill['SR']})")
 
 if __name__ == "__main__":
     main()
